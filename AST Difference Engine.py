@@ -1,6 +1,6 @@
-
+#!/usr/bin/env python
 # coding: utf-8
-# TODO: ne mask fails on change of account name, b/c index is created of acctname
+
 # ## AST Difference Engine
 # version 0.7
 # 
@@ -30,29 +30,62 @@
 # a. why does it not work to create df for use outside of function?
 # 3. Sign off feature to accept the changes and create a new LKG
 
-# In[1]:
+# In[ ]:
 
 
 import pandas as pd
+import numpy as np
 import yaml
-import warnings
 
 
-# In[2]:
+# In[ ]:
 
 
 with open("config.yaml", 'r') as ymlfile:
         cfg = yaml.load(ymlfile)
 
 
-# In[3]:
+# In[ ]:
 
 
 JUNKCOL = cfg['JUNKCOL']
 KEYCOL = cfg['KEYCOL']
+JUNKCOLSQL = cfg['JUNKCOLSQL']
+KEYCOLSQL = cfg['KEYCOLSQL']
 
 
-# In[4]:
+# In[ ]:
+
+
+pd.set_option('display.max_columns', 50)
+
+
+# In[ ]:
+
+
+def clean_sql_inputs(infile, tag):
+    """
+    infile is string identifying the csv filename to read
+    tag indicates whether the file is the CUR current version or the LKG last known good version
+    return: writes a csv that is cleaned, with a good index (unique)
+    
+    assumes:
+    """
+    df = pd.read_excel(infile)
+    df = df[[c for c in df if c not in JUNKCOLSQL]]
+    df = df.dropna(axis=0, how='all')
+    df[cfg['SALES']] = df[cfg['SALES']].astype('int')
+    
+    for c in KEYCOLSQL:
+        df[c] = df[c].astype('str')
+    df['Key'] = df[KEYCOLSQL].apply(lambda x: ''.join(x), axis=1)
+    df = df.set_index('Key')
+
+    df.to_excel("{} AAR worked.xlsx".format(tag), index=True)
+    return df
+
+
+# In[ ]:
 
 
 def clean_inputs(infile, tag):
@@ -60,10 +93,10 @@ def clean_inputs(infile, tag):
     infile is string identifying the csv filename to read
     tag indicates whether the file is the CUR current version or the LKG last known good version
     return: writes a csv that is cleaned, with a good index (unique)
-
+    
     assumes: first two rows are dropped b/c they are normally header indicating which filters used
     """
-    df = pd.read_excel(infile, sheet_name='Sheet1', skiprows=2)
+    df = pd.read_excel(infile, skiprows=2)
     df = df[[c for c in df if c not in JUNKCOL]]
     df = df.dropna(axis=0, how='all')
     df[cfg['SALES']] = df[cfg['SALES']].astype('int')
@@ -78,55 +111,79 @@ def clean_inputs(infile, tag):
     return df
 
 
-# In[5]:
+# In[ ]:
 
 
-CUR = clean_inputs('AAR 20180816 lite test.xlsx', "CUR")
+CUR = clean_sql_inputs('AAR SQL 20190322.xlsx', "CUR")
+LKG = clean_sql_inputs('AAR SQL 20190319.xlsx', "LKG")
 
 
-# In[6]:
+# In[ ]:
 
 
-LKG = clean_inputs('AAR 20180816 lite test before.xlsx', "LKG")
+# CUR = clean_sql_inputs('AAR 20190322 test.xlsx', "CUR")
+# LKG = clean_sql_inputs('AAR 20190319 test.xlsx', "LKG")
 
 
-# In[7]:
+# In[ ]:
 
 
 print(CUR.shape)
 print(LKG.shape)
 
 
-# In[9]:
+# In[ ]:
 
 
 # make a mask of any differences, true = changed
-ids = CUR[KEYCOL]
+ids = CUR[KEYCOLSQL]
+
+
+# In[ ]:
+
+
 mask = CUR.ne(LKG)
+print(mask.shape)
+
+
+# In[ ]:
+
+
 CUR = CUR[mask]
+
+
+# In[ ]:
+
+
 LKG = LKG[mask]
 
-mask.to_excel("mask.xlsx", index=True)
 
-# mask warnings
-assert (mask.shape[1] == CUR.shape[1]) and (mask.shape[1] == LKG.shape[1]), \
-    "Field mismatch, mask cols is {}, cur cols is {}, lkg cols is {}".format(mask.shape[1], CUR.shape[1], LKG.shape[1])
+# In[ ]:
 
-if mask.shape[0] > max(CUR.shape[0], LKG.shape[0]):
-    warnings.warn(F"Mask contains extra rows, mask rows is {mask.shape[0]}, cur rows is {CUR.shape[0]}, "
-                  F"lkg rows is {LKG.shape[0]}. "
-                  F"Look for {mask.shape[0]-max(CUR.shape[0], LKG.shape[0])} created/deleted rows")
 
 CUR = CUR.dropna(axis=0, how='all')
+
+
+# In[ ]:
+
+
 LKG = LKG.dropna(axis=0, how='all')
 
-merged = CUR.merge(LKG, how='outer', on=['Key'], suffixes=['_CUR', '_LKG'])
+
+# In[ ]:
+
+
+merged = CUR.merge(LKG, how = 'outer', on=['Key'], suffixes=['_CUR', '_LKG'])
+
+
+# In[ ]:
+
 
 # sort column names
 merged = merged.sort_index(axis=1)
 
 # Join on index -- ugly syntax could probably be improved 
-merged = ids.merge(merged, left_index=True, right_index=True)
+merged = ids.merge(merged, how='right', left_index=True, right_index=True)
 
 # clean = merged.dropna(thresh=1)
 clean = merged.fillna("")
@@ -156,7 +213,7 @@ mask.shape
 """
 
 
-# In[10]:
+# In[ ]:
 
 
 CUR.index.value_counts()
