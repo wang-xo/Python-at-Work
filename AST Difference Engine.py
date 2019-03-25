@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # ## AST Difference Engine
-# version 0.7
+# version 0.8
 # 
 # ### Goal
 # In the most recent AAR, identify assignments additions, deletions, and changes as compared to the LKG AAR.
@@ -13,22 +13,19 @@
 # ### Methodology
 # 1. Ingest two AAR, CURRENT and LKG, as xls  
 # 2. Clean the files  
-# a. Drop rows until data table (drops 2 right now)  
-# b. Drop junk columns  
-# c. Make a unique key column
+# a. Drop junk columns  
+# b. Make a unique key column
 # 6. For each row, using != mask identify the difference in each column between CURRENT and LKG  
 # 7. Output file with only differences, sorted
 # 
+# Config file contains sensitive information
+# 
 # ### Outstanding bugs
-# 1. Does this pick up deleted lines if the key is not there?  
-# a. if using AssignmentStatus, may carry some risk
+# 1. First row of output has bad formatting
 # 
 # ### Future implementation
-# 1. export to notepad++ for testing
-# 2. use config file
-# 2. factor code  
-# a. why does it not work to create df for use outside of function?
-# 3. Sign off feature to accept the changes and create a new LKG
+# 1. Sign off feature to accept the changes and create a new LKG
+# 2. Categorize output (new, modified, deleted)
 
 # In[84]:
 
@@ -177,7 +174,7 @@ merged = CUR.merge(LKG, how = 'outer', on=['Key'], suffixes=['_CUR', '_LKG'])
 # merged = CUR.merge(LKG, on=['Key'], suffixes=['_CUR', '_LKG'])
 
 
-# In[100]:
+# In[102]:
 
 
 # sort column names
