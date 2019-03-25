@@ -30,7 +30,7 @@
 # a. why does it not work to create df for use outside of function?
 # 3. Sign off feature to accept the changes and create a new LKG
 
-# In[ ]:
+# In[84]:
 
 
 import pandas as pd
@@ -38,14 +38,14 @@ import numpy as np
 import yaml
 
 
-# In[ ]:
+# In[85]:
 
 
 with open("config.yaml", 'r') as ymlfile:
         cfg = yaml.load(ymlfile)
 
 
-# In[ ]:
+# In[86]:
 
 
 JUNKCOL = cfg['JUNKCOL']
@@ -54,13 +54,13 @@ JUNKCOLSQL = cfg['JUNKCOLSQL']
 KEYCOLSQL = cfg['KEYCOLSQL']
 
 
-# In[ ]:
+# In[87]:
 
 
 pd.set_option('display.max_columns', 50)
 
 
-# In[ ]:
+# In[88]:
 
 
 def clean_sql_inputs(infile, tag):
@@ -85,7 +85,7 @@ def clean_sql_inputs(infile, tag):
     return df
 
 
-# In[ ]:
+# In[89]:
 
 
 def clean_inputs(infile, tag):
@@ -111,72 +111,73 @@ def clean_inputs(infile, tag):
     return df
 
 
-# In[ ]:
+# In[90]:
 
 
 CUR = clean_sql_inputs('AAR SQL 20190322.xlsx', "CUR")
 LKG = clean_sql_inputs('AAR SQL 20190319.xlsx', "LKG")
 
 
-# In[ ]:
+# In[91]:
 
 
 # CUR = clean_sql_inputs('AAR 20190322 test.xlsx', "CUR")
 # LKG = clean_sql_inputs('AAR 20190319 test.xlsx', "LKG")
 
 
-# In[ ]:
+# In[92]:
 
 
 print(CUR.shape)
 print(LKG.shape)
 
 
-# In[ ]:
+# In[93]:
 
 
 # make a mask of any differences, true = changed
 ids = CUR[KEYCOLSQL]
 
 
-# In[ ]:
+# In[94]:
 
 
 mask = CUR.ne(LKG)
 print(mask.shape)
 
 
-# In[ ]:
+# In[95]:
 
 
 CUR = CUR[mask]
 
 
-# In[ ]:
+# In[96]:
 
 
 LKG = LKG[mask]
 
 
-# In[ ]:
+# In[97]:
 
 
 CUR = CUR.dropna(axis=0, how='all')
 
 
-# In[ ]:
+# In[98]:
 
 
 LKG = LKG.dropna(axis=0, how='all')
 
 
-# In[ ]:
+# In[99]:
 
 
 merged = CUR.merge(LKG, how = 'outer', on=['Key'], suffixes=['_CUR', '_LKG'])
+# merged = CUR.merge(LKG, on=['Key'], suffixes=['_CUR', '_LKG'])
 
 
-# In[ ]:
+# In[100]:
 
 
 # sort column names
@@ -191,7 +192,7 @@ clean.sort_values(by=cfg['SORTCOL']).to_excel("diff.xlsx", index=True)
 # clean.sort_values(by=['EmailAlias_CUR', 'MSSalesTPID_CUR']).to_csv("diff.csv", index=False)
 
 
-# In[ ]:
+# In[82]:
 
 
 """
@@ -213,7 +214,7 @@ mask.shape
 """
 
 
-# In[ ]:
+# In[83]:
 
 
 CUR.index.value_counts()
